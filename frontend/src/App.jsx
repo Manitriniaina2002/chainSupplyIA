@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // Ajout de useEffect ici
+import axios from 'axios';
 import { 
   BarChart, 
   Bar, 
@@ -31,6 +32,7 @@ import {
 
 const NeuralCommandCenter = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [realTimeMetrics, setRealTimeMetrics] = useState([]);
 
   // Données pour les graphiques
   const predictiveData = [
@@ -50,14 +52,16 @@ const NeuralCommandCenter = () => {
     { name: 'Sem 4', value: 90 }
   ];
 
-  const realTimeMetrics = [
-    { time: '09:00', debit: 520, efficacite: 89, commandes: 145 },
-    { time: '09:30', debit: 480, efficacite: 92, commandes: 138 },
-    { time: '10:00', debit: 510, efficacite: 88, commandes: 152 },
-    { time: '10:30', debit: 495, efficacite: 91, commandes: 140 },
-    { time: '11:00', debit: 530, efficacite: 93, commandes: 148 },
-    { time: '11:30', debit: 487, efficacite: 92.3, commandes: 143 }
-  ];
+  useEffect(() => {
+    axios.get('http://localhost:3001/api/metrics')
+      .then(response => {
+        console.log('Données reçues:', response.data); // Pour déboguer
+        setRealTimeMetrics(response.data);
+      })
+      .catch(error => {
+        console.error('Erreur lors du fetch:', error); // Affiche l'erreur
+      });
+  }, []);
 
   const Header = () => (
     <div className="bg-white shadow-sm border-b border-gray-200 px-8 py-4">
@@ -200,6 +204,14 @@ const NeuralCommandCenter = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
           <p className="text-gray-600">Vue d'ensemble des performances</p>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 bg-green-100 px-3 py-1 rounded-full">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="text-sm text-green-700 font-medium">SYSTÈME ACTIF</span>
+          </div>
+          <Bell className="w-5 h-5 text-gray-400" />
+          <User className="w-5 h-5 text-gray-400" />
         </div>
       </div>
 
@@ -386,7 +398,7 @@ const NeuralCommandCenter = () => {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Priorité</label>
+            <label className="block text-sm font-medium text-gray-600 mb-2">Priorité</label>
             <select className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
               <option>Standard</option>
               <option>Urgent</option>

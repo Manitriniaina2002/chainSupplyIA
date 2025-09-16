@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const metricsRouter = require('./routes/metrics');
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.get('/', (req, res) => {
 
 // Routes API (on les ajoutera progressivement)
 app.use('/api/dashboard', require('./routes/dashboard'));
+app.use ('/api', metricsRouter);
 
 // Démarrage du serveur
 const PORT = process.env.PORT || 3001;
@@ -27,3 +29,4 @@ app.listen(PORT, () => {
     console.log(`📊 Dashboard API: http://localhost:${PORT}/api/dashboard`);
     console.log(`⚡ Status: http://localhost:${PORT}/`);
 });
+
