@@ -5,6 +5,7 @@ const metricsRouter = require('./routes/metrics');
 const transportRouter = require('./routes/transport');
 const maintenanceRouter = require('./routes/maintenance');
 const predictionRouter = require('./routes/prediction');
+const optimazationRouter = require('./routes/routeOptimization');
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use ('/api', metricsRouter);
 app.use('/api', transportRouter);
 app.use('/api', maintenanceRouter);
 app.use('/api', predictionRouter);
+app.use('/api', optimazationRouter);
 
 // Démarrage du serveur
 const PORT = process.env.PORT || 3001;

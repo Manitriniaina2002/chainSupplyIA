@@ -3,7 +3,6 @@ import axios from 'axios';
 //import { CSVLink } from 'react-csv';
 import { 
   BarChart, 
-
   Bar, 
   XAxis, 
   YAxis, 
@@ -38,6 +37,7 @@ const NeuralCommandCenter = () => {
   const [realTimeMetrics, setRealTimeMetrics] = useState([]);
   const [transportData, setTransportData] = useState({});
   const [equipmentData, setEquipmentData] = useState([]);
+  const [predictionData, setPredictionData] = useState([]);
 
   // Données pour les graphiques
   const predictiveData = [
@@ -67,17 +67,20 @@ const NeuralCommandCenter = () => {
         console.error('Erreur lors du fetch:', error); // Affiche l'erreur
       });
       // Fetch pour Transport
-    axios.get('http://localhost:5000/api/transport')
+    axios.get('http://localhost:3001/api/transport')
       .then(response => setTransportData(response.data))
       .catch(error => console.error('Erreur Transport:', error));
 
     // Fetch pour Maintenance
-    axios.get('http://localhost:5000/api/maintenance')
+    axios.get('http://localhost:3001/api/maintenance')
       .then(response => setEquipmentData(response.data))
       .catch(error => console.error('Erreur Maintenance:', error));
-    axios.get('http://localhost:5000/api/prediction')
+    axios.get('http://localhost:3001/api/prediction')
       .then(response => setPredictionData(response.data))
       .catch(error => console.error('Erreur Prediction:', error));
+    axios.get('http://localhost:3001/api/routeOptimization')
+      .then(response => setRouteOptimizationData(response.data))
+      .catch(error => console.error('Erreur Route Optimization:', error));
   }, []);
 
   const Header = () => (
@@ -217,6 +220,7 @@ const NeuralCommandCenter = () => {
   };
 
   const Dashboard = () => (
+
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -311,11 +315,23 @@ const NeuralCommandCenter = () => {
   const Prevision =()=>(
   <div className="p-8">
         <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Prévision Demande</h1>
-          <p className="text-gray-600">Prédictions basées sur les données historiques</p>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">Prévision Demande</h1>
+              <p className="text-gray-600">Prédictions basées sur les données historiques</p>
+            </div>
         </div>
-      </div>
+        <div className="bg-white p-6 rounded-xl shadow-md">
+      <h3 className="text-lg font-semibold text-gray-800 mb-6">Prévisions de Demande</h3>
+      <ResponsiveContainer width="100%" height={300}>
+        <LineChart data={predictionData}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+          <XAxis dataKey="name" stroke="#666" />
+          <YAxis stroke="#666" />
+          <Line type="monotone" dataKey="value" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 4 }} />
+        </LineChart>
+      </ResponsiveContainer>
+      <p className="mt-4 text-gray-600">Moyenne prévue : {predictionData.reduce((a, b) => a + b.value, 0) / predictionData.length || 0}</p>
+    </div>
       
   </div>
 );
@@ -349,7 +365,7 @@ const NeuralCommandCenter = () => {
             <Clock className="w-8 h-8 text-green-500" />
             <div>
               <h3 className="text-sm text-gray-600">Taux de Ponctualité</h3>
-              <p className="text-2xl font-bold text-gray-800">{transportData.ponctualite}%</p>
+              <p className="text-2xl font-bold text-gray-800">{(transportData.ponctualite || 0).toFixed(3)}%</p>
               <p className="text-sm text-green-500">+3.2% cette semaine</p>
             </div>
           </div>
@@ -462,8 +478,8 @@ const NeuralCommandCenter = () => {
             <AlertTriangle className="w-8 h-8 text-orange-500" />
             <div>
               <h3 className="text-sm text-gray-600">Alertes Actives</h3>
-              <p className="text-2xl font-bold text-gray-800">3</p>
-              <p className="text-sm text-orange-500">1 critique</p>
+              <p className="text-2xl font-bold text-gray-800">{equipmentData.filter(eq => eq.status === 'Critique').length}</p>
+              <p className="text-sm text-orange-500">Critique</p>
             </div>
           </div>
         </div>
@@ -491,45 +507,7 @@ const NeuralCommandCenter = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-6">
-        <EquipmentCard 
-          name="Convoyeur Principal" 
-          status="Bon" 
-          score={85} 
-          vibration={120} 
-          pressure={90}
-          nextMaintenance="15/02/2024"
-          statusColor="green"
-        />
-        <EquipmentCard 
-          name="Robot de Tri A" 
-          status="Attention" 
-          score={68} 
-          vibration={95} 
-          pressure={75}
-          nextMaintenance="20/01/2024"
-          statusColor="orange"
-        />
-        <EquipmentCard 
-          name="Système de Refroidissement" 
-          status="Critique" 
-          score={45} 
-          vibration={85} 
-          pressure={65}
-          nextMaintenance="18/01/2024"
-          statusColor="red"
-        />
-        <EquipmentCard 
-          name="Chariot Élévateur 1" 
-          status="Bon" 
-          score={91} 
-          vibration={140} 
-          pressure={110}
-          nextMaintenance="10/03/2024"
-          statusColor="green"
-        />
-      </div>
-      <div className="grid grid-cols-4 gap-6">
+      <div className="grid grid-cols-4 gap-6 p-3">
         {equipmentData.map((eq, index) => (
           <EquipmentCard key={index} {...eq} />
         ))}
@@ -619,7 +597,7 @@ const NeuralCommandCenter = () => {
       <div className="grid grid-cols-4 gap-6 mb-8">
         <div className="bg-white p-6 rounded-xl shadow-sm">
           <div className="flex items-center gap-3 mb-4">
-            <BarChart className="w-8 h-8 text-blue-500" />
+            <TrendingUp className="w-8 h-8 text-blue-500" />
             <div>
               <h3 className="text-sm text-gray-600">Débit</h3>
               <p className="text-2xl font-bold text-gray-800">487</p>
