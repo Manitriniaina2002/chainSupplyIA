@@ -2,6 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const metricsRouter = require('./routes/metrics');
+const transportRouter = require('./routes/transport');
+const maintenanceRouter = require('./routes/maintenance');
+const predictionRouter = require('./routes/prediction');
 
 const app = express();
 
@@ -21,6 +24,9 @@ app.get('/', (req, res) => {
 // Routes API (on les ajoutera progressivement)
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use ('/api', metricsRouter);
+app.use('/api', transportRouter);
+app.use('/api', maintenanceRouter);
+app.use('/api', predictionRouter);
 
 // Démarrage du serveur
 const PORT = process.env.PORT || 3001;
