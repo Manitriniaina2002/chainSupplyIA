@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react'; // Ajout de useEffect ici
 import axios from 'axios';
+//import { CSVLink } from 'react-csv';
 import { 
   BarChart, 
+
   Bar, 
   XAxis, 
   YAxis, 
@@ -15,6 +17,7 @@ import {
 } from 'recharts';
 import { 
   Activity,
+  LayoutDashboard,
   Zap,
   DollarSign,
   Truck,
@@ -33,6 +36,8 @@ import {
 const NeuralCommandCenter = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [realTimeMetrics, setRealTimeMetrics] = useState([]);
+  const [transportData, setTransportData] = useState({});
+  const [equipmentData, setEquipmentData] = useState([]);
 
   // Données pour les graphiques
   const predictiveData = [
@@ -61,17 +66,29 @@ const NeuralCommandCenter = () => {
       .catch(error => {
         console.error('Erreur lors du fetch:', error); // Affiche l'erreur
       });
+      // Fetch pour Transport
+    axios.get('http://localhost:5000/api/transport')
+      .then(response => setTransportData(response.data))
+      .catch(error => console.error('Erreur Transport:', error));
+
+    // Fetch pour Maintenance
+    axios.get('http://localhost:5000/api/maintenance')
+      .then(response => setEquipmentData(response.data))
+      .catch(error => console.error('Erreur Maintenance:', error));
+    axios.get('http://localhost:5000/api/prediction')
+      .then(response => setPredictionData(response.data))
+      .catch(error => console.error('Erreur Prediction:', error));
   }, []);
 
   const Header = () => (
-    <div className="bg-white shadow-sm border-b border-gray-200 px-8 py-4">
+    <div className="bg-white shadow-xl border-b border-gray-200 px-8 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
             <Activity className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="font-bold text-xl text-gray-800">Centre de Commande Neuronal</h1>
+            <h1 className="font-bold text-xl text-gray-800">Centre de Commande</h1>
             <p className="text-sm text-gray-600">IA pour l'optimisation de la chaîne d'approvisionnement</p>
           </div>
         </div>
@@ -95,7 +112,7 @@ const NeuralCommandCenter = () => {
               <Bell className="w-5 h-5" />
               <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
             </button>
-            <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+            <button className="p-2 text-white hover:text-gray-600 transition-colors bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg">
               <User className="w-5 h-5" />
             </button>
           </div>
@@ -105,19 +122,20 @@ const NeuralCommandCenter = () => {
   );
 
   const Sidebar = () => (
-    <div className="w-64 bg-white shadow-lg h-screen">
+    <div className="w-64 bg-white shadow-xl h-screen">
       <div className="p-6">
         
         <nav className="space-y-2">
           <SidebarItem 
-            icon={BarChart} 
+            icon={LayoutDashboard} 
             label="Dashboard" 
             active={currentPage === 'dashboard'}
             onClick={() => setCurrentPage('dashboard')}
           />
           <SidebarItem 
             icon={TrendingUp} 
-            label="Prévision Demande" 
+            label="Prévision" 
+            active={currentPage === 'prevision'}
             onClick={() => setCurrentPage('prevision')}
           />
           <SidebarItem 
@@ -205,14 +223,7 @@ const NeuralCommandCenter = () => {
           <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
           <p className="text-gray-600">Vue d'ensemble des performances</p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-green-100 px-3 py-1 rounded-full">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span className="text-sm text-green-700 font-medium">SYSTÈME ACTIF</span>
-          </div>
-          <Bell className="w-5 h-5 text-gray-400" />
-          <User className="w-5 h-5 text-gray-400" />
-        </div>
+        
       </div>
 
       <div className="grid grid-cols-4 gap-6 mb-8">
@@ -246,7 +257,7 @@ const NeuralCommandCenter = () => {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-2 shadow-xl rounded-lg gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -297,6 +308,18 @@ const NeuralCommandCenter = () => {
     </div>
   );
 
+  const Prevision =()=>(
+  <div className="p-8">
+        <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Prévision Demande</h1>
+          <p className="text-gray-600">Prédictions basées sur les données historiques</p>
+        </div>
+      </div>
+      
+  </div>
+);
+
   const Transport = () => (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
@@ -326,7 +349,7 @@ const NeuralCommandCenter = () => {
             <Clock className="w-8 h-8 text-green-500" />
             <div>
               <h3 className="text-sm text-gray-600">Taux de Ponctualité</h3>
-              <p className="text-2xl font-bold text-gray-800">92.8%</p>
+              <p className="text-2xl font-bold text-gray-800">{transportData.ponctualite}%</p>
               <p className="text-sm text-green-500">+3.2% cette semaine</p>
             </div>
           </div>
@@ -337,7 +360,7 @@ const NeuralCommandCenter = () => {
             <Package className="w-8 h-8 text-orange-500" />
             <div>
               <h3 className="text-sm text-gray-600">Livraisons</h3>
-              <p className="text-2xl font-bold text-gray-800">307</p>
+              <p className="text-2xl font-bold text-gray-800">{transportData.livraisons}</p>
               <p className="text-sm text-blue-500">Cette semaine</p>
             </div>
           </div>
@@ -348,7 +371,7 @@ const NeuralCommandCenter = () => {
             <MapPin className="w-8 h-8 text-purple-500" />
             <div>
               <h3 className="text-sm text-gray-600">Routes Optimisées</h3>
-              <p className="text-2xl font-bold text-gray-800">156</p>
+              <p className="text-2xl font-bold text-gray-800">{transportData.routesOptimisees}</p>
               <p className="text-sm text-green-500">+12 aujourd'hui</p>
             </div>
           </div>
@@ -428,7 +451,7 @@ const NeuralCommandCenter = () => {
             <CheckCircle className="w-8 h-8 text-green-500" />
             <div>
               <h3 className="text-sm text-gray-600">Équipements Opérationnels</h3>
-              <p className="text-2xl font-bold text-gray-800">2/4</p>
+              <p className="text-2xl font-bold text-gray-800">{equipmentData.filter(eq => eq.status === 'Bon').length}/4</p>
               <p className="text-sm text-gray-500">75% du parc</p>
             </div>
           </div>
@@ -505,6 +528,11 @@ const NeuralCommandCenter = () => {
           nextMaintenance="10/03/2024"
           statusColor="green"
         />
+      </div>
+      <div className="grid grid-cols-4 gap-6">
+        {equipmentData.map((eq, index) => (
+          <EquipmentCard key={index} {...eq} />
+        ))}
       </div>
     </div>
   );
@@ -584,7 +612,10 @@ const NeuralCommandCenter = () => {
           </div>
         </div>
       </div>
-
+      
+      {/*<CSVLink data={realTimeMetrics} filename={"metrics.csv"} className="bg-blue-500 text-white px-4 py-2 rounded-lg">
+      Exporter en CSV
+      </CSVLink>*/}
       <div className="grid grid-cols-4 gap-6 mb-8">
         <div className="bg-white p-6 rounded-xl shadow-sm">
           <div className="flex items-center gap-3 mb-4">
@@ -669,6 +700,8 @@ const NeuralCommandCenter = () => {
     switch(currentPage) {
       case 'dashboard':
         return <Dashboard />;
+      case 'prevision':
+        return <Prevision />;
       case 'transport':
         return <Transport />;
       case 'maintenance':
@@ -681,7 +714,7 @@ const NeuralCommandCenter = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-200">
       <Header />
       <div className="flex">
         <Sidebar />
