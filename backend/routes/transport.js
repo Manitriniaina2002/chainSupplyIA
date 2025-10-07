@@ -1,25 +1,21 @@
 const express = require('express');
 const router = express.Router();
 
-let transportData = {
-  economies: 4700,
-  ponctualite: 92.8,
-  livraisons: 307,
-  routesOptimisees: 156
-};
+let transportData = Array(100).fill().map((_, index) => ({
+  id: index + 1,
+  route: `Route ${index + 1}`,
+  ponctualite: Math.floor(Math.random() * 101),
+  distance: Math.floor(Math.random() * 1000)
+}));
 
 setInterval(() => {
-  transportData = {
-    ...transportData,
-    economies: transportData.economies + Math.floor(Math.random() * 100) - 50,
-    ponctualite: Math.min(100, transportData.ponctualite + (Math.random() - 0.5)),
-    livraisons: transportData.livraisons + Math.floor(Math.random() * 5) - 2,
-    routesOptimisees: transportData.routesOptimisees + Math.floor(Math.random() * 3) - 1
-  };
-}, 2000); // Mise à jour toutes les 2 secondes
+  transportData = transportData.map(data => ({
+    ...data,
+    ponctualite: Math.max(0, Math.min(100, data.ponctualite + (Math.random() - 0.5) * 5))
+  }));
+}, 2000);
 
 router.get('/transport', (req, res) => {
   res.json(transportData);
 });
-
 module.exports = router;

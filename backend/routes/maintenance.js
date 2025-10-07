@@ -1,21 +1,18 @@
 const express = require('express');
 const router = express.Router();
 
-let equipmentData = [
-  { name: 'Convoyeur Principal', score: 85, status: 'Bon', statusColor: 'green', vibration : 120, pressure : 90 , nextMaintenance : '10/03/2024'},
-  { name: 'Robot de Tri A', score: 68, status: 'Attention', statusColor: 'orange',vibration : 95, pressure : 75 , nextMaintenance :'10/03/2024'},
-  { name: 'Système de Refroidissement', score: 45, status: 'Critique', statusColor: 'red',vibration : 85, pressure : 65, nextMaintenance : '10/03/2024'},
-  { name: 'Chariot Élévateur 1', score: 91, status: 'Bon', statusColor: 'green' ,vibration : 140, pressure : 110, nextMaintenance :'10/03/2024'},
-  { name: 'Convoyeur Principal', score: 85, status: 'Bon', statusColor: 'green', vibration : 120, pressure : 90 , nextMaintenance : '10/03/2024'},
-  { name: 'Robot de Tri A', score: 68, status: 'Attention', statusColor: 'orange',vibration : 95, pressure : 75 , nextMaintenance :'10/03/2024'},
-  { name: 'Système de Refroidissement', score: 45, status: 'Critique', statusColor: 'red',vibration : 85, pressure : 65, nextMaintenance : '10/03/2024'},
-  { name: 'Chariot Élévateur 1', score: 91, status: 'Bon', statusColor: 'green' ,vibration : 140, pressure : 110, nextMaintenance :'10/03/2024'}
-];
+let equipmentData = Array(100).fill().map((_, index) => ({
+  id: index + 1,
+  name: `Équipement ${String.fromCharCode(65 + (index % 26))}${Math.floor(index / 26) + 1}`,
+  status: Math.random() > 0.3 ? "OK" : "KO",
+  score: Math.floor(Math.random() * 101),
+  lastMaintenance: `2025-0${Math.floor(Math.random() * 9) + 1}-${Math.floor(Math.random() * 28) + 1}`
+}));
 
 setInterval(() => {
   equipmentData = equipmentData.map(eq => ({
     ...eq,
-    score: Math.round(Math.max(0, Math.min(100, eq.score + (Math.random() - 0.5) * 5))) // Arrondi à l'entier le plus proche
+    score: Math.round(Math.max(0, Math.min(100, eq.score + (Math.random() - 0.5) * 5)))
   }));
 }, 2000); // Mise à jour toutes les 2 secondes
 

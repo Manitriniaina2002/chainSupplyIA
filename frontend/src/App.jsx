@@ -91,7 +91,7 @@ const NeuralCommandCenter = () => {
             <Activity className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="font-bold text-xl text-gray-800">Centre de Commande</h1>
+            <h1 className="font-bold text-xl text-gray-800">Fashion & Beauty</h1>
             <p className="text-sm text-gray-600">IA pour l'optimisation de la chaîne d'approvisionnement</p>
           </div>
         </div>
@@ -507,11 +507,11 @@ const NeuralCommandCenter = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-6 p-3">
-        {equipmentData.map((eq, index) => (
-          <EquipmentCard key={index} {...eq} />
-        ))}
-      </div>
+      <div className="grid grid-cols-4 gap-6 p-6">
+      {equipmentData.map((eq, index) => (
+        <EquipmentCard key={index} {...eq} />
+      ))}
+    </div>
     </div>
   );
 
@@ -590,17 +590,13 @@ const NeuralCommandCenter = () => {
           </div>
         </div>
       </div>
-      
-      {/*<CSVLink data={realTimeMetrics} filename={"metrics.csv"} className="bg-blue-500 text-white px-4 py-2 rounded-lg">
-      Exporter en CSV
-      </CSVLink>*/}
       <div className="grid grid-cols-4 gap-6 mb-8">
         <div className="bg-white p-6 rounded-xl shadow-sm">
           <div className="flex items-center gap-3 mb-4">
             <TrendingUp className="w-8 h-8 text-blue-500" />
             <div>
               <h3 className="text-sm text-gray-600">Débit</h3>
-              <p className="text-2xl font-bold text-gray-800">487</p>
+              <p className="text-2xl font-bold text-gray-800">{(realTimeMetrics[0]?.debit || 0).toFixed(2)}</p>
               <p className="text-sm text-gray-500">unités/heure</p>
             </div>
           </div>
@@ -611,7 +607,7 @@ const NeuralCommandCenter = () => {
             <Activity className="w-8 h-8 text-green-500" />
             <div>
               <h3 className="text-sm text-gray-600">Efficacité</h3>
-              <p className="text-2xl font-bold text-gray-800">92.3%</p>
+              <p className="text-2xl font-bold text-gray-800">{(realTimeMetrics[0]?.efficacite || 0).toFixed(2)}%</p>
               <p className="text-sm text-green-500">+2.1% aujourd'hui</p>
             </div>
           </div>
@@ -622,7 +618,7 @@ const NeuralCommandCenter = () => {
             <Package className="w-8 h-8 text-orange-500" />
             <div>
               <h3 className="text-sm text-gray-600">Commandes Actives</h3>
-              <p className="text-2xl font-bold text-gray-800">143</p>
+              <p className="text-2xl font-bold text-gray-800">{(realTimeMetrics[0]?.commandes || 0).toFixed(2)}</p>
               <p className="text-sm text-gray-500">en cours</p>
             </div>
           </div>
@@ -633,7 +629,7 @@ const NeuralCommandCenter = () => {
             <Zap className="w-8 h-8 text-red-500" />
             <div>
               <h3 className="text-sm text-gray-600">Alertes</h3>
-              <p className="text-2xl font-bold text-gray-800">2</p>
+              <p className="text-2xl font-bold text-gray-800">{realTimeMetrics[0]?.alertes || 0}</p>
               <p className="text-sm text-red-500">nécessitent attention</p>
             </div>
           </div>
