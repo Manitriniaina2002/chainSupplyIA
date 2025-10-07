@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'; // Ajout de useEffect ici
 import axios from 'axios';
+import Chart from 'chart.js/auto'; // Importe Chart.js avec auto-configuration
 //import { CSVLink } from 'react-csv';
 import { 
   BarChart, 
@@ -36,6 +37,7 @@ const NeuralCommandCenter = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [realTimeMetrics, setRealTimeMetrics] = useState([]);
   const [transportData, setTransportData] = useState({});
+  const [maintenanceData, setMaintenanceData] = useState([]);
   const [equipmentData, setEquipmentData] = useState([]);
   const [predictionData, setPredictionData] = useState([]);
 
@@ -73,8 +75,9 @@ const NeuralCommandCenter = () => {
 
     // Fetch pour Maintenance
     axios.get('http://localhost:3001/api/maintenance')
-      .then(response => setEquipmentData(response.data))
+      .then(response => setMaintenanceData(response.data))
       .catch(error => console.error('Erreur Maintenance:', error));
+
     axios.get('http://localhost:3001/api/prediction')
       .then(response => setPredictionData(response.data))
       .catch(error => console.error('Erreur Prediction:', error));
@@ -82,6 +85,62 @@ const NeuralCommandCenter = () => {
       .then(response => setRouteOptimizationData(response.data))
       .catch(error => console.error('Erreur Route Optimization:', error));
   }, []);
+
+useEffect(() => {
+    if (maintenanceData.length > 0 && currentPage === 'maintenance') {
+      const ctx = document.getElementById('maintenanceChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: maintenanceData.map(d => d.time),
+          datasets: [
+            {
+              label: 'Taux de Défauts (%)',
+              data: maintenanceData.map(d => d.defectRate || 0),
+              borderColor: '#ef4444',
+              backgroundColor: 'rgba(239, 68, 68, 0.2)',
+              fill: true,
+              tension: 0.1
+            },
+            {
+              label: 'Délai Fabrication (jours)',
+              data: maintenanceData.map(d => d.leadTime || 0),
+              borderColor: '#f59e0b',
+              backgroundColor: 'rgba(245, 158, 11, 0.2)',
+              fill: true,
+              tension: 0.1
+            },
+            {
+              label: 'Coût Maintenance ($)',
+              data: maintenanceData.map(d => d.maintenanceCost || 0),
+              borderColor: '#8b5cf6',
+              backgroundColor: 'rgba(139, 92, 246, 0.2)',
+              fill: true,
+              tension: 0.1
+            },
+            {
+              label: 'Score Inspection (%)',
+              data: maintenanceData.map(d => d.inspectionScore || 0),
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.2)',
+              fill: true,
+              tension: 0.1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+  }, [maintenanceData, currentPage]);
+
+
 
   const Header = () => (
     <div className="bg-white shadow-xl border-b border-gray-200 px-8 py-4">
@@ -449,7 +508,33 @@ const NeuralCommandCenter = () => {
     </div>
   );
 
-  const Maintenance = () => (
+ const Maintenance = () => {
+  // Calculer les métriques agrégées depuis le tableau
+  const metrics = React.useMemo(() => {
+    if (!maintenanceData || maintenanceData.length === 0) {
+      return {
+        defectRate: 0,
+        leadTime: 0,
+        maintenanceCost: 0,
+        inspectionScore: 0
+      };
+    }
+
+    // Option 1 : MOYENNE de toutes les valeurs
+    const avgDefectRate = maintenanceData.reduce((sum, item) => sum + (item.defectRate || 0), 0) / maintenanceData.length;
+    const avgLeadTime = maintenanceData.reduce((sum, item) => sum + (item.leadTime || 0), 0) / maintenanceData.length;
+    const totalMaintenanceCost = maintenanceData.reduce((sum, item) => sum + (item.maintenanceCost || 0), 0);
+    const avgInspectionScore = maintenanceData.reduce((sum, item) => sum + (item.inspectionScore || 0), 0) / maintenanceData.length;
+
+    return {
+      defectRate: avgDefectRate,
+      leadTime: avgLeadTime,
+      maintenanceCost: totalMaintenanceCost, // Somme pour le coût total
+      inspectionScore: avgInspectionScore
+    };
+  }, [maintenanceData]);
+
+  return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -461,59 +546,46 @@ const NeuralCommandCenter = () => {
         </button>
       </div>
 
-      <div className="grid grid-cols-4 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-xl shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <CheckCircle className="w-8 h-8 text-green-500" />
-            <div>
-              <h3 className="text-sm text-gray-600">Équipements Opérationnels</h3>
-              <p className="text-2xl font-bold text-gray-800">{equipmentData.filter(eq => eq.status === 'Bon').length}/4</p>
-              <p className="text-sm text-gray-500">75% du parc</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <AlertTriangle className="w-8 h-8 text-orange-500" />
-            <div>
-              <h3 className="text-sm text-gray-600">Alertes Actives</h3>
-              <p className="text-2xl font-bold text-gray-800">{equipmentData.filter(eq => eq.status === 'Critique').length}</p>
-              <p className="text-sm text-orange-500">Critique</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <Clock className="w-8 h-8 text-blue-500" />
-            <div>
-              <h3 className="text-sm text-gray-600">Temps d'Arrêt Évité</h3>
-              <p className="text-2xl font-bold text-gray-800">168h</p>
-              <p className="text-sm text-red-500">-15% ce mois</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <TrendingUp className="w-8 h-8 text-purple-500" />
-            <div>
-              <h3 className="text-sm text-gray-600">Économies Réalisées</h3>
-              <p className="text-2xl font-bold text-gray-800">45,600€</p>
-              <p className="text-sm text-green-500">+23% vs prévu</p>
-            </div>
-          </div>
+      <div className="grid grid-cols-4 gap-6 mt-8">
+        <MetricCard
+          icon={Clock}
+          title="TAUX DE DÉFAUTS"
+          value={`${metrics.defectRate.toFixed(2)}%`}
+          change="+0.5%"
+          color="red"
+        />
+        <MetricCard
+          icon={Clock}
+          title="DÉLAI FABRICATION"
+          value={`${metrics.leadTime.toFixed(0)} jours`}
+          change="+0.2%"
+          color="orange"
+        />
+        <MetricCard
+          icon={DollarSign}
+          title="COÛT MAINTENANCE"
+          value={`$${metrics.maintenanceCost.toFixed(2)}`}
+          change="+1.0%"
+          color="purple"
+        />
+        <MetricCard
+          icon={CheckCircle}
+          title="SCORE INSPECTION"
+          value={`${metrics.inspectionScore.toFixed(0)}%`}
+          change="-0.5%"
+          color="green"
+        />
+      </div>
+    <div className="mt-8 bg-white p-6 rounded-xl shadow-sm">
+        <h3 className="text-lg font-semibold text-gray-800">Tendances de Maintenance</h3>
+        <div className="h-96">
+          {/* Graphique ici */}
+          <canvas id="maintenanceChart"></canvas>
         </div>
       </div>
-
-      <div className="grid grid-cols-4 gap-6 p-6">
-      {equipmentData.map((eq, index) => (
-        <EquipmentCard key={index} {...eq} />
-      ))}
-    </div>
     </div>
   );
+};
 
   const EquipmentCard = ({ name, status, score, vibration, pressure, nextMaintenance, statusColor }) => {
     const statusClasses = {
@@ -596,7 +668,7 @@ const NeuralCommandCenter = () => {
             <TrendingUp className="w-8 h-8 text-blue-500" />
             <div>
               <h3 className="text-sm text-gray-600">Débit</h3>
-              <p className="text-2xl font-bold text-gray-800">{(realTimeMetrics[0]?.debit || 0).toFixed(2)}</p>
+              <p className="text-2xl font-bold text-gray-800">{(realTimeMetrics[0]?.debit || 0).toFixed(0)}</p>
               <p className="text-sm text-gray-500">unités/heure</p>
             </div>
           </div>
@@ -618,7 +690,7 @@ const NeuralCommandCenter = () => {
             <Package className="w-8 h-8 text-orange-500" />
             <div>
               <h3 className="text-sm text-gray-600">Commandes Actives</h3>
-              <p className="text-2xl font-bold text-gray-800">{(realTimeMetrics[0]?.commandes || 0).toFixed(2)}</p>
+              <p className="text-2xl font-bold text-gray-800">{(realTimeMetrics[0]?.commandes || 0).toFixed(0)}</p>
               <p className="text-sm text-gray-500">en cours</p>
             </div>
           </div>
@@ -629,7 +701,7 @@ const NeuralCommandCenter = () => {
             <Zap className="w-8 h-8 text-red-500" />
             <div>
               <h3 className="text-sm text-gray-600">Alertes</h3>
-              <p className="text-2xl font-bold text-gray-800">{realTimeMetrics[0]?.alertes || 0}</p>
+              <p className="text-2xl font-bold text-gray-800">{(realTimeMetrics[0]?.alertes || 0).toFixed(0)}</p>
               <p className="text-sm text-red-500">nécessitent attention</p>
             </div>
           </div>
