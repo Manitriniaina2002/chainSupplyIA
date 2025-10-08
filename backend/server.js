@@ -12,8 +12,16 @@ const optimizationRoutes = require('./routes/optimization');
 
 const app = express();
 
-// Configuration
-app.use(cors({ origin: 'https://chain-supply-o2rmtteei-stellams-projects.vercel.app' }));
+// Configuration CORS
+app.use(cors({
+  origin: [
+    'https://chain-supply-o2rmtteei-stellams-projects.vercel.app',
+    'http://localhost:5173' // Pour tests locaux avec Vite
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Inclure OPTIONS pour preflight
+  credentials: true, // Si vous utilisez des cookies/auth
+  allowedHeaders: ['Content-Type', 'Authorization'] // En-têtes autorisés
+}));
 app.use(express.json());
 
 // Message de bienvenue
