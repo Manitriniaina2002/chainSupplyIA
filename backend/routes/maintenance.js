@@ -5,7 +5,7 @@ const loadSupplyChainData = require('../dataLoader');
 let maintenanceData = [];
 
 // Chargement initial
-loadSupplyChainData('/home/stellam/centre-commande-neuronal/backend/data/supply_chain_data.csv')
+loadSupplyChainData('../data/supply_chain_data.csv')
   .then((data) => {
     maintenanceData = data.map(row => ({
       time: row.time,

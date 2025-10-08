@@ -5,7 +5,7 @@ const loadSupplyChainData = require('../dataLoader');
 let realTimeMetrics = [];
 
 // Charger les données réelles au démarrage
-loadSupplyChainData('/home/stellam/centre-commande-neuronal/backend/data/supply_chain_data.csv').then((data) => {
+loadSupplyChainData('../data/supply_chain_data.csv').then((data) => {
   realTimeMetrics = data.slice(0, 200); // Prend les 200 premières lignes
   console.log(`Chargé ${realTimeMetrics.length} enregistrements pour metrics.`);
 }).catch((error) => {

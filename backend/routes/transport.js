@@ -4,7 +4,7 @@ const loadSupplyChainData = require('../dataLoader');
 
 let transportData = [];
 
-loadSupplyChainData('/home/stellam/centre-commande-neuronal/backend/data/supply_chain_data.csv').then((data) => {
+loadSupplyChainData('../data/supply_chain_data.csv').then((data) => {
   transportData = data.slice(0, 100).map(row => ({
     time: row.time,
     shippingCost: row.shippingCost,

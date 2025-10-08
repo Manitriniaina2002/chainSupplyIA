@@ -5,7 +5,7 @@ const loadSupplyChainData = require('../dataLoader');
 let optimizationData = [];
 
 // Chargement initial
-loadSupplyChainData('/home/stellam/centre-commande-neuronal/backend/data/supply_chain_data.csv')
+loadSupplyChainData('../data/supply_chain_data.csv')
   .then((data) => {
     // Grouper les données par semaine et calculer l'efficacité moyenne
     const weeklyData = {};
