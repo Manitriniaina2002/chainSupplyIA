@@ -35,7 +35,8 @@ import {
   Settings,
   Search,
   Bell,
-  User
+  User,
+Shirt
 } from 'lucide-react';
 
 const NeuralCommandCenter = () => {
@@ -47,6 +48,7 @@ const NeuralCommandCenter = () => {
   const [forecastData, setForecastData] = useState([]);
 const [transportData, setTransportData] = useState([]);
 const [metrics, setMetrics] = useState({ orderFlow: 0, avgValue: 0, transportEfficiency: 0, globalPerformance: 50 });
+const [optimizationData, setOptimizationData] = useState([]);
 
 
 
@@ -78,16 +80,22 @@ const [metrics, setMetrics] = useState({ orderFlow: 0, avgValue: 0, transportEff
       console.log('Données transport reçues:', res.data);
       setTransportData(res.data);
     }).catch(error => console.error('Erreur fetch transport:', error));
+ const fetchOptimization = () => axios.get('http://localhost:3001/api/optimization').then(res => {
+    console.log('Données optimization reçues:', res.data);
+    setOptimizationData(res.data);
+  }).catch(error => console.error('Erreur fetch optimization:', error));
     fetchMetrics();
     fetchMaintenance();
     fetchForecast();
     fetchTransport();
+ fetchOptimization(); 
     const interval = setInterval(() => {
       console.log('Intervalle déclenché - Current page:', currentPage);
       fetchMetrics();
       fetchMaintenance();
       fetchForecast();
       fetchTransport();
+fetchOptimization();
     }, 10000);
     return () => clearInterval(interval);
   }, [currentPage]);
@@ -155,8 +163,8 @@ useEffect(() => {
     <div className="bg-white shadow-xl border-b border-gray-200 px-8 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
-            <Activity className="w-6 h-6 text-white" />
+          <div className="w-10 h-10   rounded-lg flex items-center justify-center">
+            <Shirt size={24} color="purple" />
           </div>
           <div>
             <h1 className="font-bold text-xl text-gray-800">Fashion & Beauty</h1>
@@ -231,7 +239,6 @@ useEffect(() => {
 
         <div className="mt-8 p-4 bg-gray-50 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
-            <Activity className="w-4 h-4 text-purple-500" />
             <span className="text-sm font-medium text-gray-700">Système Neural</span>
           </div>
           <p className="text-xs text-gray-600">Intelligence artificielle avancée pour l'optimisation de la chaîne d'approvisionnement</p>
@@ -302,14 +309,6 @@ useEffect(() => {
           <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
           <p className="text-gray-600">Vue d'ensemble des performances</p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-green-100 px-3 py-1 rounded-full">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span className="text-sm text-green-700 font-medium">SYSTÈME ACTIF</span>
-          </div>
-          <Bell className="w-5 h-5 text-gray-400" />
-          <User className="w-5 h-5 text-gray-400" />
-        </div>
       </div>
 
       <div className="grid grid-cols-4 gap-6 mb-8">
@@ -351,7 +350,7 @@ useEffect(() => {
             </div>
           </div>
           <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={routeOptimizationData}>
+            <BarChart data={optimizationData}> {/* ✅ Utiliser optimizationData au lieu de routeOptimizationData */}
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="name" stroke="#666" />
               <YAxis stroke="#666" />
@@ -848,17 +847,19 @@ useEffect(() => {
       case 'maintenance': return <Maintenance maintenanceData={maintenanceData} />;
       case 'forecast': return <Forecast forecastData={forecastData} />;
       case 'transport': return <Transport transportData={transportData} />;
-      default: return <Dashboard realTimeMetrics={realTimeMetrics} orderFlow={metrics.orderFlow} avgValue={metrics.avgValue} transportEfficiency={metrics.transportEfficiency} globalPerformance={metrics.globalPerformance} forecastData={forecastData} transportData={transportData} />;
+      default: return <Dashboard realTimeMetrics={realTimeMetrics} orderFlow={metrics.orderFlow} avgValue={metrics.avgValue} transportEfficiency={metrics.transportEfficiency} globalPerformance={metrics.globalPerformance} forecastData={forecastData} transportData={transportData} optimizationData={optimizationData} />;
     }
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
-     
+  <div className="flex h-screen bg-gray-100 flex-col">
+    <Header />
+    <div className="flex flex-1">
       <Sidebar setCurrentPage={setCurrentPage} />
       <main className="flex-1 overflow-y-auto">{renderPage()}</main>
     </div>
-  );
+  </div>
+);
 };
 
 export default NeuralCommandCenter;
