@@ -4,7 +4,7 @@ const loadSupplyChainData = require('../dataLoader');
 
 let forecastData = [];
 
-loadSupplyChainData('../data/supply_chain_data.csv').then((data) => {
+loadSupplyChainData('backend/data/supply_chain_data.csv').then((data) => {
   const historicalData = data.map(row => parseFloat(row['Number of products sold']) || 0);
   const avgDemand = historicalData.reduce((a, b) => a + b, 0) / historicalData.length;
   const forecastPeriod = 10; // Prévoyez pour les 10 prochaines unités de temps

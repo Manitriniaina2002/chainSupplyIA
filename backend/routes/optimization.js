@@ -5,7 +5,7 @@ const loadSupplyChainData = require('../dataLoader');
 let optimizationData = [];
 
 // Chargement initial
-loadSupplyChainData('../data/supply_chain_data.csv')
+loadSupplyChainData('backend/data/supply_chain_data.csv')
   .then((data) => {
     // Grouper les données par semaine et calculer l'efficacité moyenne
     const weeklyData = {};
