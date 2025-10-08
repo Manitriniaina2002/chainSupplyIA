@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react'; // Ajout de useEffect ici
 import axios from 'axios';
 import Chart from 'chart.js/auto'; // Importe Chart.js avec auto-configuration
 import { Tooltip, Legend} from 'recharts';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement } from 'chart.js';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement);
 
 //import { CSVLink } from 'react-csv';
 import { 
@@ -38,22 +41,14 @@ import {
 const NeuralCommandCenter = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [realTimeMetrics, setRealTimeMetrics] = useState([]);
-  const [transportData, setTransportData] = useState({});
   const [maintenanceData, setMaintenanceData] = useState([]);
   const [equipmentData, setEquipmentData] = useState([]);
   //const [predictionData, setPredictionData] = useState([]);
   const [forecastData, setForecastData] = useState([]);
+const [transportData, setTransportData] = useState([]);
+const [metrics, setMetrics] = useState({ orderFlow: 0, avgValue: 0, transportEfficiency: 0, globalPerformance: 50 });
 
-  // Données pour les graphiques
-  const predictiveData = [
-    { name: 'Jan', value: 1200 },
-    { name: 'Fév', value: 1380 },
-    { name: 'Mar', value: 1320 },
-    { name: 'Avr', value: 1400 },
-    { name: 'Mai', value: 1350 },
-    { name: 'Jun', value: 1420 },
-    { name: 'Jul', value: 1480 }
-  ];
+
 
   const routeOptimizationData = [
     { name: 'Sem 1', value: 85 },
@@ -63,80 +58,96 @@ const NeuralCommandCenter = () => {
   ];
 
   useEffect(() => {
-    console.log('Début du useEffect pour les fetches');
+    console.log('Début du useEffect - Current page:', currentPage);
+    console.log('État initial - forecastData:', forecastData, 'transportData:', transportData);
     const fetchMetrics = () => axios.get('http://localhost:3001/api/metrics').then(res => {
       console.log('Métriques reçues:', res.data);
       setRealTimeMetrics(res.data);
-    });
+    }).catch(error => console.error('Erreur fetch metrics:', error));
     const fetchMaintenance = () => axios.get('http://localhost:3001/api/maintenance').then(res => {
       console.log('Maintenance reçues:', res.data);
       setMaintenanceData(res.data);
-    });
+    }).catch(error => console.error('Erreur fetch maintenance:', error));
     const fetchForecast = () => axios.get('http://localhost:3001/api/forecast').then(res => {
       console.log('Réponse API forecast:', res);
       console.log('Données forecast reçues:', res.data);
       setForecastData(res.data);
     }).catch(error => console.error('Erreur fetch forecast:', error));
+    const fetchTransport = () => axios.get('http://localhost:3001/api/transport').then(res => {
+      console.log('Réponse API transport:', res);
+      console.log('Données transport reçues:', res.data);
+      setTransportData(res.data);
+    }).catch(error => console.error('Erreur fetch transport:', error));
     fetchMetrics();
     fetchMaintenance();
     fetchForecast();
-    const interval = setInterval(() => { fetchMetrics(); fetchMaintenance(); fetchForecast(); },10000);
+    fetchTransport();
+    const interval = setInterval(() => {
+      console.log('Intervalle déclenché - Current page:', currentPage);
+      fetchMetrics();
+      fetchMaintenance();
+      fetchForecast();
+      fetchTransport();
+    }, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [currentPage]);
 
 useEffect(() => {
-    if (maintenanceData.length > 0 && currentPage === 'maintenance') {
-      const ctx = document.getElementById('maintenanceChart').getContext('2d');
-      new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: maintenanceData.map(d => d.time),
-          datasets: [
-            {
-              label: 'Taux de Défauts (%)',
-              data: maintenanceData.map(d => d.defectRate || 0),
-              borderColor: '#ef4444',
-              backgroundColor: 'rgba(239, 68, 68, 0.2)',
-              fill: true,
-              tension: 0.1
-            },
-            {
-              label: 'Délai Fabrication (jours)',
-              data: maintenanceData.map(d => d.leadTime || 0),
-              borderColor: '#f59e0b',
-              backgroundColor: 'rgba(245, 158, 11, 0.2)',
-              fill: true,
-              tension: 0.1
-            },
-            {
-              label: 'Coût Maintenance ($)',
-              data: maintenanceData.map(d => d.maintenanceCost || 0),
-              borderColor: '#8b5cf6',
-              backgroundColor: 'rgba(139, 92, 246, 0.2)',
-              fill: true,
-              tension: 0.1
-            },
-            {
-              label: 'Score Inspection (%)',
-              data: maintenanceData.map(d => d.inspectionScore || 0),
-              borderColor: '#10b981',
-              backgroundColor: 'rgba(16, 185, 129, 0.2)',
-              fill: true,
-              tension: 0.1
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: true
-            }
-          }
-        }
-      });
-    }
-  }, [maintenanceData, currentPage]);
+  console.log('Calcul des métriques déclenché');
+  console.log('realTimeMetrics:', realTimeMetrics);
+  console.log('maintenanceData:', maintenanceData);
+  console.log('transportData:', transportData);
+  
+  const calculateMetrics = () => {
+    const validMaintenance = maintenanceData.filter(d => 
+      d.defectRate !== undefined && 
+      d.inspectionScore !== undefined
+    );
+    
+    const validTransport = transportData.filter(d => 
+      d.leadTime !== undefined && 
+      d.shippingCost !== undefined
+    );
+    
+    const validRealTime = realTimeMetrics.filter(d => 
+      d.debit !== undefined
+    );
+    
+    console.log('Valid realTime:', validRealTime);
+    console.log('Valid maintenance:', validMaintenance);
+    console.log('Valid transport:', validTransport);
+    
+    // ✅ Utiliser realTimeMetrics pour le débit et maintenanceData pour leadTime
+    const orderFlow = validRealTime.length > 0 && validMaintenance.length > 0
+      ? Number(validRealTime[0].debit) / (Number(validMaintenance[0].leadTime) || 1)
+      : 0;
+    
+    const avgValue = validMaintenance.length > 0 && validTransport.length > 0 
+      ? (Number(validMaintenance[0].maintenanceCost) + Number(validTransport[0]?.shippingCost || 0)) / 2
+      : (validMaintenance.length > 0 ? Number(validMaintenance[0].maintenanceCost) : 0);
+    
+    const transportEfficiency = validTransport.length > 0 && validTransport[0]?.leadTime
+      ? (1 / Number(validTransport[0].leadTime) * 100) 
+      : 0;
+    
+    const globalPerformance = validMaintenance.length > 0 
+      ? ((100 - Number(validMaintenance[0].defectRate) * 100) + Number(validMaintenance[0].inspectionScore)) / 2
+      : 50;
+
+    console.log('Métriques calculées:', { orderFlow, avgValue, transportEfficiency, globalPerformance });
+    return { orderFlow, avgValue, transportEfficiency, globalPerformance };
+  };
+  
+  const newMetrics = calculateMetrics();
+  setMetrics(newMetrics);
+}, [maintenanceData, transportData, realTimeMetrics]); // ✅ Ajouter realTimeMetrics dans les dépendances
+
+
+  useEffect(() => {
+    console.log('État mis à jour - forecastData:', forecastData, 'transportData:', transportData);
+  }, [forecastData, transportData]);
+
+
 
 
 
@@ -253,7 +264,8 @@ useEffect(() => {
       blue: 'from-blue-500 to-purple-500',
       green: 'from-green-500 to-emerald-500',
       orange: 'from-orange-500 to-red-500',
-      purple: 'from-purple-500 to-pink-500'
+      purple: 'from-purple-500 to-pink-500',
+      red: 'from-red-500 to-pink-500'
     };
 
     return (
@@ -276,49 +288,38 @@ useEffect(() => {
     );
   };
 
-  const Dashboard = () => (
+  const Dashboard = ({ realTimeMetrics, orderFlow, avgValue, transportEfficiency, globalPerformance, forecastData, transportData }) => {
+  console.log('Dashboard rendu - forecastData:', forecastData, 'transportData:', transportData, 'orderFlow:', orderFlow);
+  if (!forecastData || !transportData || forecastData.length === 0 || transportData.length === 0) {
+    console.log('Données en chargement ou invalides:', { forecastData, transportData });
+    return <div className="p-8 text-center text-gray-600">Chargement des données du Dashboard...</div>;
+  }
 
+  return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
           <p className="text-gray-600">Vue d'ensemble des performances</p>
         </div>
-        
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 bg-green-100 px-3 py-1 rounded-full">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="text-sm text-green-700 font-medium">SYSTÈME ACTIF</span>
+          </div>
+          <Bell className="w-5 h-5 text-gray-400" />
+          <User className="w-5 h-5 text-gray-400" />
+        </div>
       </div>
 
       <div className="grid grid-cols-4 gap-6 mb-8">
-        <MetricCard 
-          icon={Zap} 
-          title="FLUX COMMANDES" 
-          value="65.4/h" 
-          change="+12.5%" 
-          color="purple" 
-        />
-        <MetricCard 
-          icon={DollarSign} 
-          title="VALEUR MOYENNE" 
-          value="€1250" 
-          change="+8.2%" 
-          color="green" 
-        />
-        <MetricCard 
-          icon={Truck} 
-          title="EFFICACITÉ TRANSPORT" 
-          value="92.3%" 
-          change="+5.1%" 
-          color="blue" 
-        />
-        <MetricCard 
-          icon={TrendingUp} 
-          title="PERFORMANCE GLOBALE" 
-          value="94%" 
-          change="+3.7%" 
-          color="orange" 
-        />
+        <MetricCard icon={Zap} title="FLUX COMMANDES" value={`${Number(orderFlow).toFixed(0)}/h`} change="+12.5%" color="purple" />
+        <MetricCard icon={DollarSign} title="VALEUR MOYENNE" value={`€${(avgValue).toFixed(2)}`} change="+8.2%" color="green" />
+        <MetricCard icon={Truck} title="EFFICACITÉ TRANSPORT" value={`${Number(transportEfficiency).toFixed(2)}%`} change="+5.1%" color="blue" />
+        <MetricCard icon={TrendingUp} title="PERFORMANCE GLOBALE" value={`${Number(globalPerformance).toFixed(2)}%`} change="+3.7%" color="orange" />
       </div>
 
-      <div className="grid grid-cols-2 shadow-xl rounded-lg gap-6">
+      <div className="grid grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -330,18 +331,11 @@ useEffect(() => {
             </div>
           </div>
           <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={predictiveData}>
+            <LineChart data={forecastData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="name" stroke="#666" />
+              <XAxis dataKey="time" stroke="#666" />
               <YAxis stroke="#666" />
-              <Line 
-                type="monotone" 
-                dataKey="value" 
-                stroke="#8b5cf6" 
-                strokeWidth={3}
-                dot={{ fill: '#8b5cf6', strokeWidth: 2, r: 4 }}
-                strokeDasharray="5 5"
-              />
+              <Line type="monotone" dataKey="demand" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 4 }} strokeDasharray="5 5" />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -349,7 +343,7 @@ useEffect(() => {
         <div className="bg-white p-6 rounded-xl shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-lg font-semibold text-gray-800">Optimisation Routes</h3>
+              <h3 className="text-lg font-semibold text-gray-800">Optimisation des Routes</h3>
               <p className="text-sm text-gray-600">Algorithm-Driven Logistics</p>
             </div>
             <div className="bg-green-100 px-3 py-1 rounded-full">
@@ -368,6 +362,7 @@ useEffect(() => {
       </div>
     </div>
   );
+};
 
 const Forecast = ({ forecastData }) => {
   console.log('Forecast data dans le composant:', forecastData);
@@ -430,7 +425,7 @@ const Forecast = ({ forecastData }) => {
         <MetricCard
           icon={DollarSign}
           title="DEMANDE ACTUELLE"
-          value={`${(forecastData[0]?.demand || 0).toFixed(2)} unités`}
+          value={`${(forecastData[0]?.demand || 0).toFixed(0)} unités`}
           change="+2.0%"
           color="blue"
         />
@@ -445,118 +440,93 @@ const Forecast = ({ forecastData }) => {
   );
 };
 
-  const Transport = () => (
+// Nouveau composant Transport
+const Transport = ({ transportData }) => {
+  console.log('Transport data dans le composant:', transportData);
+  if (!transportData || transportData.length === 0) {
+    return <div className="p-8 text-center text-gray-600">Chargement des données de transport...</div>;
+  }
+
+  useEffect(() => {
+    let chartInstance = null;
+    if (transportData.length > 0) {
+      const ctx = document.getElementById('transportChart').getContext('2d');
+      if (ctx) {
+        if (chartInstance) {
+          chartInstance.destroy();
+        }
+        chartInstance = new Chart(ctx, {
+          type: 'line', // Ou 'bar' pour comparer les routes
+          data: {
+            labels: transportData.map(d => d.time),
+            datasets: [{
+              label: 'Coût d\'Expédition',
+              data: transportData.map(d => d.shippingCost || 0),
+              borderColor: '#f97316',
+              backgroundColor: 'rgba(249, 115, 22, 0.2)',
+              fill: true,
+              tension: 0.1
+            }, {
+              label: 'Délai de Livraison',
+              data: transportData.map(d => d.leadTime || 0),
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.2)',
+              fill: true,
+              tension: 0.1
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              y: {
+                beginAtZero: true,
+                title: { display: true, text: 'Valeur' }
+              },
+              x: {
+                title: { display: true, text: 'Temps' }
+              }
+            }
+          }
+        });
+      } else {
+        console.error('Contexte du canvas non trouvé');
+      }
+    }
+    return () => {
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+    };
+  }, [transportData]);
+
+  return (
     <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Optimisation du Transport</h1>
-          <p className="text-gray-600">Optimisez vos routes et réduisez vos coûts de transport</p>
-        </div>
-        <button className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg transition-shadow">
-          Optimiser les Routes
-        </button>
+      <h1 className="text-2xl font-bold text-gray-800">Transport</h1>
+      <div className="grid grid-cols-4 gap-6 mt-8">
+        <MetricCard
+          icon={Truck} // Ajoute l'import si nécessaire: import { FaTruck } from 'react-icons/fa';
+          title="COÛT ACTUEL"
+          value={`$${transportData[0]?.shippingCost.toFixed(2) || 0}`}
+          change="+1.5%"
+          color="orange"
+        />
+        <MetricCard
+          icon={Clock}
+          title="DÉLAI ACTUEL"
+          value={`${transportData[0]?.leadTime.toFixed(0) || 0} jours`}
+          change="+0.8%"
+          color="green"
+        />
       </div>
-
-      <div className="grid grid-cols-4 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-xl shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <DollarSign className="w-8 h-8 text-blue-500" />
-            <div>
-              <h3 className="text-sm text-gray-600">Économies Réalisées</h3>
-              <p className="text-2xl font-bold text-gray-800">4700€</p>
-              <p className="text-sm text-green-500">+25% ce mois</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <Clock className="w-8 h-8 text-green-500" />
-            <div>
-              <h3 className="text-sm text-gray-600">Taux de Ponctualité</h3>
-              <p className="text-2xl font-bold text-gray-800">{(transportData.ponctualite || 0).toFixed(3)}%</p>
-              <p className="text-sm text-green-500">+3.2% cette semaine</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <Package className="w-8 h-8 text-orange-500" />
-            <div>
-              <h3 className="text-sm text-gray-600">Livraisons</h3>
-              <p className="text-2xl font-bold text-gray-800">{transportData.livraisons}</p>
-              <p className="text-sm text-blue-500">Cette semaine</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <MapPin className="w-8 h-8 text-purple-500" />
-            <div>
-              <h3 className="text-sm text-gray-600">Routes Optimisées</h3>
-              <p className="text-2xl font-bold text-gray-800">{transportData.routesOptimisees}</p>
-              <p className="text-sm text-green-500">+12 aujourd'hui</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white p-6 rounded-xl shadow-sm">
-        <h3 className="text-lg font-semibold text-gray-800 mb-6">Nouvelle Optimisation de Route</h3>
-        
-        <div className="grid grid-cols-3 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Point de Départ</label>
-            <input 
-              type="text" 
-              placeholder="Entrepôt A"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Destination</label>
-            <input 
-              type="text" 
-              placeholder="Zone de livraison"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Type de Véhicule</label>
-            <select className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-              <option>Camion</option>
-              <option>Van</option>
-              <option>Poids lourd</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-6 mt-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Capacité Max (kg)</label>
-            <input 
-              type="number" 
-              placeholder="1000"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">Priorité</label>
-            <select className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-              <option>Standard</option>
-              <option>Urgent</option>
-              <option>Express</option>
-            </select>
-          </div>
+      <div className="mt-8 bg-white p-6 rounded-xl shadow-sm">
+        <h3 className="text-lg font-semibold text-gray-800">Tendances de Transport</h3>
+        <div className="h-96">
+          <canvas id="transportChart"></canvas>
         </div>
       </div>
     </div>
   );
+};
 
  const Maintenance = () => {
   // Calculer les métriques agrégées depuis le tableau
@@ -584,6 +554,86 @@ const Forecast = ({ forecastData }) => {
     };
   }, [maintenanceData]);
 
+useEffect(() => {
+  let chartInstance = null; // Variable pour stocker l'instance
+  
+  if (maintenanceData.length > 0 && currentPage === 'maintenance') {
+    const ctx = document.getElementById('maintenanceChart');
+    
+    if (ctx) {
+      const context = ctx.getContext('2d');
+      
+      // Détruire l'instance précédente si elle existe
+      if (Chart.getChart(ctx)) {
+        Chart.getChart(ctx).destroy();
+      }
+      
+      chartInstance = new Chart(context, {
+        type: 'line',
+        data: {
+          labels: maintenanceData.map(d => d.time),
+          datasets: [
+            {
+              label: 'Taux de Défauts (%)',
+              data: maintenanceData.map(d => (d.defectRate || 0) * 100), // Multiplier par 100 si c'est une décimale
+              borderColor: '#ef4444',
+              backgroundColor: 'rgba(239, 68, 68, 0.2)',
+              fill: true,
+              tension: 0.4
+            },
+            {
+              label: 'Délai Fabrication (jours)',
+              data: maintenanceData.map(d => d.leadTime || 0),
+              borderColor: '#f59e0b',
+              backgroundColor: 'rgba(245, 158, 11, 0.2)',
+              fill: true,
+              tension: 0.4
+            },
+            {
+              label: 'Coût Maintenance ($)',
+              data: maintenanceData.map(d => d.maintenanceCost || 0),
+              borderColor: '#8b5cf6',
+              backgroundColor: 'rgba(139, 92, 246, 0.2)',
+              fill: true,
+              tension: 0.4
+            },
+            {
+              label: 'Score Inspection (%)',
+              data: maintenanceData.map(d => d.inspectionScore || 0),
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.2)',
+              fill: true,
+              tension: 0.4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top'
+            }
+          }
+        }
+      });
+    }
+  }
+  
+  // Nettoyage au démontage ou changement de page
+  return () => {
+    if (chartInstance) {
+      chartInstance.destroy();
+    }
+  };
+}, [maintenanceData, currentPage]);
+
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
@@ -598,7 +648,7 @@ const Forecast = ({ forecastData }) => {
 
       <div className="grid grid-cols-4 gap-6 mt-8">
         <MetricCard
-          icon={Clock}
+          icon={AlertTriangle}
           title="TAUX DE DÉFAUTS"
           value={`${metrics.defectRate.toFixed(2)}%`}
           change="+0.5%"
@@ -797,12 +847,14 @@ const Forecast = ({ forecastData }) => {
       case 'metrics': return <Metrics realTimeMetrics={realTimeMetrics} />;
       case 'maintenance': return <Maintenance maintenanceData={maintenanceData} />;
       case 'forecast': return <Forecast forecastData={forecastData} />;
-      default: return <Dashboard realTimeMetrics={realTimeMetrics} />;
+      case 'transport': return <Transport transportData={transportData} />;
+      default: return <Dashboard realTimeMetrics={realTimeMetrics} orderFlow={metrics.orderFlow} avgValue={metrics.avgValue} transportEfficiency={metrics.transportEfficiency} globalPerformance={metrics.globalPerformance} forecastData={forecastData} transportData={transportData} />;
     }
   };
 
   return (
     <div className="flex h-screen bg-gray-100">
+     
       <Sidebar setCurrentPage={setCurrentPage} />
       <main className="flex-1 overflow-y-auto">{renderPage()}</main>
     </div>
