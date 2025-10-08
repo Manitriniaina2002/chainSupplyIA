@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react'; // Ajout de useEffect ici
 import axios from 'axios';
 import Chart from 'chart.js/auto'; // Importe Chart.js avec auto-configuration
+import { Tooltip, Legend} from 'recharts';
+
 //import { CSVLink } from 'react-csv';
 import { 
   BarChart, 
@@ -39,7 +41,8 @@ const NeuralCommandCenter = () => {
   const [transportData, setTransportData] = useState({});
   const [maintenanceData, setMaintenanceData] = useState([]);
   const [equipmentData, setEquipmentData] = useState([]);
-  const [predictionData, setPredictionData] = useState([]);
+  //const [predictionData, setPredictionData] = useState([]);
+  const [forecastData, setForecastData] = useState([]);
 
   // Données pour les graphiques
   const predictiveData = [
@@ -60,30 +63,25 @@ const NeuralCommandCenter = () => {
   ];
 
   useEffect(() => {
-    axios.get('http://localhost:3001/api/metrics')
-      .then(response => {
-        console.log('Données reçues:', response.data); // Pour déboguer
-        setRealTimeMetrics(response.data);
-      })
-      .catch(error => {
-        console.error('Erreur lors du fetch:', error); // Affiche l'erreur
-      });
-      // Fetch pour Transport
-    axios.get('http://localhost:3001/api/transport')
-      .then(response => setTransportData(response.data))
-      .catch(error => console.error('Erreur Transport:', error));
-
-    // Fetch pour Maintenance
-    axios.get('http://localhost:3001/api/maintenance')
-      .then(response => setMaintenanceData(response.data))
-      .catch(error => console.error('Erreur Maintenance:', error));
-
-    axios.get('http://localhost:3001/api/prediction')
-      .then(response => setPredictionData(response.data))
-      .catch(error => console.error('Erreur Prediction:', error));
-    axios.get('http://localhost:3001/api/routeOptimization')
-      .then(response => setRouteOptimizationData(response.data))
-      .catch(error => console.error('Erreur Route Optimization:', error));
+    console.log('Début du useEffect pour les fetches');
+    const fetchMetrics = () => axios.get('http://localhost:3001/api/metrics').then(res => {
+      console.log('Métriques reçues:', res.data);
+      setRealTimeMetrics(res.data);
+    });
+    const fetchMaintenance = () => axios.get('http://localhost:3001/api/maintenance').then(res => {
+      console.log('Maintenance reçues:', res.data);
+      setMaintenanceData(res.data);
+    });
+    const fetchForecast = () => axios.get('http://localhost:3001/api/forecast').then(res => {
+      console.log('Réponse API forecast:', res);
+      console.log('Données forecast reçues:', res.data);
+      setForecastData(res.data);
+    }).catch(error => console.error('Erreur fetch forecast:', error));
+    fetchMetrics();
+    fetchMaintenance();
+    fetchForecast();
+    const interval = setInterval(() => { fetchMetrics(); fetchMaintenance(); fetchForecast(); },10000);
+    return () => clearInterval(interval);
   }, []);
 
 useEffect(() => {
@@ -197,8 +195,8 @@ useEffect(() => {
           <SidebarItem 
             icon={TrendingUp} 
             label="Prévision" 
-            active={currentPage === 'prevision'}
-            onClick={() => setCurrentPage('prevision')}
+            active={currentPage === 'forecast'}
+            onClick={() => setCurrentPage('forecast')}
           />
           <SidebarItem 
             icon={Truck} 
@@ -371,29 +369,81 @@ useEffect(() => {
     </div>
   );
 
-  const Prevision =()=>(
-  <div className="p-8">
-        <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">Prévision Demande</h1>
-              <p className="text-gray-600">Prédictions basées sur les données historiques</p>
-            </div>
+const Forecast = ({ forecastData }) => {
+  console.log('Forecast data dans le composant:', forecastData);
+  if (!forecastData || forecastData.length === 0) {
+    console.log('Données vides ou non chargées:', forecastData);
+    return <div className="p-8 text-center text-gray-600">Chargement des données de prévision...</div>;
+  }
+
+  useEffect(() => {
+    let chartInstance = null;
+    if (forecastData.length > 0) {
+      const ctx = document.getElementById('forecastChart').getContext('2d');
+      if (ctx) {
+        // Détruit l'instance précédente s'elle existe
+        if (chartInstance) {
+          chartInstance.destroy();
+        }
+        chartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: forecastData.map(d => d.time),
+            datasets: [{
+              label: 'Prévision de Demande',
+              data: forecastData.map(d => d.demand || 0),
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(59, 130, 246, 0.2)',
+              fill: true,
+              tension: 0.1
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              y: {
+                beginAtZero: true,
+                title: { display: true, text: 'Demande' }
+              },
+              x: {
+                title: { display: true, text: 'Temps' }
+              }
+            }
+          }
+        });
+      } else {
+        console.error('Contexte du canvas non trouvé');
+      }
+    }
+    // Nettoyage au démontage
+    return () => {
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+    };
+  }, [forecastData]); // Dépendance à forecastData pour re-rendre
+
+  return (
+    <div className="p-8">
+      <h1 className="text-2xl font-bold text-gray-800">Prévision</h1>
+      <div className="grid grid-cols-4 gap-6 mt-8">
+        <MetricCard
+          icon={DollarSign}
+          title="DEMANDE ACTUELLE"
+          value={`${(forecastData[0]?.demand || 0).toFixed(2)} unités`}
+          change="+2.0%"
+          color="blue"
+        />
+      </div>
+      <div className="mt-8 bg-white p-6 rounded-xl shadow-sm">
+        <h3 className="text-lg font-semibold text-gray-800">Prévision de Demande</h3>
+        <div className="h-96">
+          <canvas id="forecastChart"></canvas>
         </div>
-        <div className="bg-white p-6 rounded-xl shadow-md">
-      <h3 className="text-lg font-semibold text-gray-800 mb-6">Prévisions de Demande</h3>
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={predictionData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-          <XAxis dataKey="name" stroke="#666" />
-          <YAxis stroke="#666" />
-          <Line type="monotone" dataKey="value" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 4 }} />
-        </LineChart>
-      </ResponsiveContainer>
-      <p className="mt-4 text-gray-600">Moyenne prévue : {predictionData.reduce((a, b) => a + b.value, 0) / predictionData.length || 0}</p>
+      </div>
     </div>
-      
-  </div>
-);
+  );
+};
 
   const Transport = () => (
     <div className="p-8">
@@ -742,32 +792,19 @@ useEffect(() => {
     </div>
   );
 
-  const renderCurrentPage = () => {
-    switch(currentPage) {
-      case 'dashboard':
-        return <Dashboard />;
-      case 'prevision':
-        return <Prevision />;
-      case 'transport':
-        return <Transport />;
-      case 'maintenance':
-        return <Maintenance />;
-      case 'metrics':
-        return <Metrics />;
-      default:
-        return <Dashboard />;
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'metrics': return <Metrics realTimeMetrics={realTimeMetrics} />;
+      case 'maintenance': return <Maintenance maintenanceData={maintenanceData} />;
+      case 'forecast': return <Forecast forecastData={forecastData} />;
+      default: return <Dashboard realTimeMetrics={realTimeMetrics} />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-200">
-      <Header />
-      <div className="flex">
-        <Sidebar />
-        <div className="flex-1 overflow-auto">
-          {renderCurrentPage()}
-        </div>
-      </div>
+    <div className="flex h-screen bg-gray-100">
+      <Sidebar setCurrentPage={setCurrentPage} />
+      <main className="flex-1 overflow-y-auto">{renderPage()}</main>
     </div>
   );
 };
