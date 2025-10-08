@@ -5,7 +5,7 @@ const loadSupplyChainData = require('../dataLoader');
 let maintenanceData = [];
 
 // Chargement initial
-loadSupplyChainData('backend/data/supply_chain_data.csv')
+loadSupplyChainData('data/supply_chain_data.csv')
   .then((data) => {
     maintenanceData = data.map(row => ({
       time: row.time,

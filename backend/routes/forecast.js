@@ -4,7 +4,7 @@ const loadSupplyChainData = require('../dataLoader');
 
 let forecastData = [];
 
-loadSupplyChainData('backend/data/supply_chain_data.csv').then((data) => {
+loadSupplyChainData('data/supply_chain_data.csv').then((data) => {
   console.log('Données brutes du CSV:', data[0]);
   const historicalData = data.map(row => row.debit || 0);
   console.log('Données historiques:', historicalData.slice(0, 5));
