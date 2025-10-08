@@ -13,7 +13,7 @@ const optimizationRoutes = require('./routes/optimization');
 const app = express();
 
 // Configuration
-app.use(cors());
+app.use(cors({ origin: 'https://chain-supply-o2rmtteei-stellams-projects.vercel.app' }));
 app.use(express.json());
 
 // Message de bienvenue
