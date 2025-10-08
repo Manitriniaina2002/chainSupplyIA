@@ -19,7 +19,7 @@ app.use(express.json());
 // Message de bienvenue
 app.get('/', (req, res) => {
     res.json({
-        message: "🚀 Centre de Commande Neuronal - Backend actif !",
+        message: "Fashion & Beauty - Backend actif !",
         status: "En ligne",
         timestamp: new Date().toISOString()
     });

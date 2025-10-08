@@ -62,25 +62,25 @@ const [optimizationData, setOptimizationData] = useState([]);
   useEffect(() => {
     console.log('Début du useEffect - Current page:', currentPage);
     console.log('État initial - forecastData:', forecastData, 'transportData:', transportData);
-    const fetchMetrics = () => axios.get('http://localhost:3001/api/metrics').then(res => {
+    const fetchMetrics = () => axios.get('https://chainsupplyia.onrender.com/api/metrics').then(res => {
       console.log('Métriques reçues:', res.data);
       setRealTimeMetrics(res.data);
     }).catch(error => console.error('Erreur fetch metrics:', error));
-    const fetchMaintenance = () => axios.get('http://localhost:3001/api/maintenance').then(res => {
+    const fetchMaintenance = () => axios.get('https://chainsupplyia.onrender.com/api/maintenance').then(res => {
       console.log('Maintenance reçues:', res.data);
       setMaintenanceData(res.data);
     }).catch(error => console.error('Erreur fetch maintenance:', error));
-    const fetchForecast = () => axios.get('http://localhost:3001/api/forecast').then(res => {
+    const fetchForecast = () => axios.get('https://chainsupplyia.onrender.com/api/forecast').then(res => {
       console.log('Réponse API forecast:', res);
       console.log('Données forecast reçues:', res.data);
       setForecastData(res.data);
     }).catch(error => console.error('Erreur fetch forecast:', error));
-    const fetchTransport = () => axios.get('http://localhost:3001/api/transport').then(res => {
+    const fetchTransport = () => axios.get('https://chainsupplyia.onrender.com/api/transport').then(res => {
       console.log('Réponse API transport:', res);
       console.log('Données transport reçues:', res.data);
       setTransportData(res.data);
     }).catch(error => console.error('Erreur fetch transport:', error));
- const fetchOptimization = () => axios.get('http://localhost:3001/api/optimization').then(res => {
+ const fetchOptimization = () => axios.get('https://chainsupplyia.onrender.com/api/optimization').then(res => {
     console.log('Données optimization reçues:', res.data);
     setOptimizationData(res.data);
   }).catch(error => console.error('Erreur fetch optimization:', error));
