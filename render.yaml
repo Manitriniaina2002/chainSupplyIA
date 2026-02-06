@@ -1,0 +1,32 @@
+services:
+  # Backend API Service
+  - type: web
+    name: chainsupplyia
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+    autoDeploy: true
+
+  # Frontend Static Site
+  - type: web
+    name: chainsupplyia-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: public, max-age=31536000
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        value: https://chainsupplyia.onrender.com
+    autoDeploy: true

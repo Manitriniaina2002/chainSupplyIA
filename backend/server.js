@@ -16,6 +16,7 @@ const app = express();
 app.use(cors({
   origin: [
     'https://chain-supply-o2rmtteei-stellams-projects.vercel.app',
+    'https://chainsupplyia-frontend.onrender.com',
     'http://localhost:5173' // Pour tests locaux avec Vite
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Inclure OPTIONS pour preflight
